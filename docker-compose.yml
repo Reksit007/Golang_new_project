@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: subscriptions-postgres
+    environment:
+      POSTGRES_DB: subscriptions
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d subscriptions"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    container_name: subscriptions-api
+    environment:
+      HTTP_ADDR: ":8080"
+      DATABASE_URL: "postgres://admin:admin@postgres:5432/subscriptions?sslmode=disable"
+    ports:
+      - "28080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui:v5.22.0
+    container_name: subscriptions-swagger
+    environment:
+      SWAGGER_JSON: /docs/openapi.yaml
+    volumes:
+      - ./docs:/docs:ro
+    ports:
+      - "18081:8080"
+
+volumes:
+  postgres_data:

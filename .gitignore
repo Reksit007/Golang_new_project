@@ -1,0 +1,6 @@
+.env
+*.exe
+*.test
+.DS_Store
+
+postgres_data/
